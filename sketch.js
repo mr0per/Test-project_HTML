@@ -1,120 +1,81 @@
 let circleSize, halfSize;
 let circles = [];
 let repelDist;
-let canvas;
-let makeBig = false; 
+let canvas; 
 
 function setup() {
-  canvas = createCanvas(windowWidth, windowHeight);
+  canvas = createCanvas(window.innerWidth, windowHeight);
   canvas.position(0, 0);
   canvas.style('z-index', '-1');
-  canvas.style('position', 'fixed');
-
-  //REFERENCE HTML ELEMENTS ----------------------
-  let mainImage = select("#main-image"); 
-  let header2 = select("#header-two");
-
-  mainImage.mousePressed(() => {
-    makeBig = !makeBig;
-    if (makeBig) {
-      mainImage.style('width', '100%');
-    } else {
-      mainImage.style('width', '30%');
-    }
-  });
-
-  if(header2) {
-    header2.mouseOver(() => {
-      header2.style('font-size', '10vh');
-      header2.style('color', 'red');
-  }); 
-  
-
-  header2.mouseOut(() => {
-    header2.style('font-size', '5vh');
-    header2.style('color', 'black');
-  }); 
-  }
-
+  canvas.style('position', 'fixed'); // Ensure the canvas stays fixed
 
   colorMode(HSB);
+
+  circleSize = height * 0.1; // Adjusted size for a better grid
+  halfSize = circleSize / 2;
+  repelDist = circleSize * 2; // Distance for repulsion effect
+  background(220);
   noStroke();
 
-  circleSize = height * 0.1;
-  halfSize = circleSize / 2;
-  repelDist = circleSize * 2;
-
-  initializeCircles();
+  // Initialize circles array with their positions
+  for (let x = halfSize; x <= width; x += circleSize) {
+    for (let y = halfSize; y <= height - halfSize; y += circleSize) {
+      circles.push({ x: x, y: y, originalX: x, originalY: y });
+    }
+  }
 
   mouseX = -width / 2;
   mouseY = -height / 2;
 }
 
 function draw() {
-  background(255, 0.08);
+  background(300, 0.08);
 
+  let c = color(500, 20, 100);
+  let r = color(0, 10, 100);
 
-  for (let circle of circles) {
-    circle.displayCircle();
-    circle.changeColor();
-    circle.repelCircle();
+  let fillR = lerpColor(c, r, 0.1);
+
+  for (let i = 0; i < circles.length; i++) {
+    let circle = circles[i];
+
+    // Calculate the distance between the mouse and the circle
+    let d = dist(mouseX, mouseY, circle.x, circle.y);
+
+    // Apply repulsion force if within repelDist
+    if (d < repelDist) {
+      let angle = atan2(circle.y - mouseY, circle.x - mouseX);
+      circle.x += cos(angle) * (repelDist - d) * 0.05;
+      circle.y += sin(angle) * (repelDist - d) * 0.05;
+      fill(fillR);
+    } else {
+      // Return to original position if not repelled
+      circle.x = lerp(circle.x, circle.originalX, 0.05);
+      circle.y = lerp(circle.y, circle.originalY, 0.05);
+      fill(c);
+    }
+
+    // Draw the circle
+    circleShape(circle.x, circle.y, circleSize);
   }
+}
 
+function circleShape(x, y, size) {
+  rectMode(CENTER);
+  rect(x, y, size, size);
 }
 
 function windowResized() {
   resizeCanvas(window.innerWidth, window.innerHeight);
-  initializeCircles();
-  mouseX = -width / 2;
-  mouseY = -height / 2;
-}
 
-function initializeCircles() {
-  circles = [];
-  for (let x = halfSize; x <= width; x += circleSize) {
-    for (let y = halfSize; y <= height; y += circleSize) {
-      circles.push(new Circle(x, y));
+    // Initialize circles array with their positions
+    for (let x = halfSize; x <= width; x += circleSize) {
+      for (let y = halfSize; y <= height - halfSize; y += circleSize + halfSize) {
+        circles.push({ x: x, y: y, originalX: x, originalY: y });
+      }
     }
-  }
-}
 
-class Circle {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-    this.originalX = x;
-    this.originalY = y;
-    this.fillROn = false;
-  }
+    mouseX = -width / 2;
+    mouseY = -height / 2;
 
-  changeColor() {
-    let c = color(200, 10, 100);
-    let r = color(0, 10, 100);
-    let fillR = lerpColor(c, r, 0.1);
-
-    if (this.fillROn) {
-      fill(fillR);
-    } else {
-      fill(c);
-    }
-  }
-
-  displayCircle() {
-    circle(this.x, this.y, circleSize);
-  }
-
-  repelCircle() {
-    let d = dist(mouseX, mouseY, this.x, this.y);
-
-    if (d < repelDist) {
-      let angle = atan2(this.y - mouseY, this.x - mouseX);
-      this.x += cos(angle) * (repelDist - d) * 0.05;
-      this.y += sin(angle) * (repelDist - d) * 0.05;
-      this.fillROn = true;
-    } else {
-      this.x = lerp(this.x, this.originalX, 0.05);
-      this.y = lerp(this.y, this.originalY, 0.05);
-      this.fillROn = false;
-    }
-  }
 }
